@@ -122,13 +122,12 @@ void pop(client_t * client) {
     return;
 }
 
-void pop_client(unsigned int client_id) {
+void pop_client(int socket_fd) {
     client_t *current = head;
     client_t *previous = head;
-    int i = 0;
 
-    for (i = 0; i <= client_nb; i++) {
-        if (current->client_id == client_id) {
+    while (current != NULL) {
+        if (current->socket_fd == socket_fd) {
             pop(previous);
             client_nb --;
             return;
@@ -153,13 +152,12 @@ client_t * get_client(int socket_fd) {
     return NULL;
 }
 
-__attribute__((unused))
 void brodcast_message(char *mesg, int socket_fd) {
     client_t *current = head;
 
     while (current != NULL) {
         if(current->socket_fd != socket_fd)
-            write(current->socket_fd, mesg, sizeof(mesg));
+            write(current->socket_fd, mesg, MAX_BUFF_SIZE);
         current = current->next;
     }
 
@@ -171,39 +169,30 @@ void *pthread_routine(void *arg)
     client_t *client_arg;
     int socket_fd = *(int *) arg;
     char buff[MAX_BUFF_SIZE];
-    bool login = true;
-    //char entete[MAX_BUFF_SIZE];
-    
+    char client_name[MAX_USERNAME_SIZE];
+    char broadcast_mesg[MAX_BUFF_SIZE + 32];
+
+    read(socket_fd, buff, sizeof(buff));
+    strcpy(client_name, buff);
+    client_arg = get_client(socket_fd);
+    strcpy(client_arg->client_name, client_name);
+    sprintf(broadcast_mesg, "%s join the connection ...\n", client_arg->client_name);
+    brodcast_message(broadcast_mesg, socket_fd);
     for (;;) {
         bzero(buff, MAX_BUFF_SIZE);
-        if (login) {
-            client_arg = get_client(socket_fd);
-            read(socket_fd, buff, sizeof(buff));
-            strcpy(client_arg->client_name, buff);
-            /* sprintf(entete,"************ Message from : %s ************\n",
-            client_arg->client_name); */
-            login = false; 
-            continue;
-        }
         // read the message from client and copy it in buffer
         read(socket_fd, buff, sizeof(buff));
-        // print buffer which contains the client contents 
-        printf("From client %s : %s\n", client_arg->client_name, buff);
-        /* brodcast_message(entete,socket_fd);
-        brodcast_message(buff,socket_fd);
-        brodcast_message("EOM",socket_fd); */
+        if (strlen(buff) > 1) {
+            printf("Mesg from client %s : %s", client_name, buff);
+            sprintf(broadcast_mesg, "%s : %s", client_name, buff);
+            brodcast_message(broadcast_mesg, socket_fd);
+        }
         // if msg contains "Exit" then server exit and chat ended. 
-        if (strncmp("exit", buff, 4) == 0) { 
-            printf("Client %d  Exit...\n", client_arg->client_id);
-            pop_client(client_arg->client_id);
+        if (strncmp("exit", buff, 4) == 0) {
+            pop_client(socket_fd);
+            printf("Client %s  Exit...\n", client_name);
             break; 
         }
-        bzero(buff, MAX_BUFF_SIZE); 
-        // copy server message in the buffer 
-        /*while ((buff[n++] = getchar()) != '\n') 
-            ; */
-        // and send that buffer to client 
-        //write(socket_fd, buff, sizeof(buff));
     }
 
     return NULL;

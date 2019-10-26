@@ -23,8 +23,10 @@
 #include <stdbool.h>
 
 #define PORT               8181
-#define MAX_BUFF_SIZE      80
-#define MAX_USERNAME_SIZE  32
+#define MAX_BUFF_SIZE      255
+#define MAX_USERNAME_SIZE  10
 
+void str_trim_lf (char* arr, int length);
+void str_overwrite_stdout();
 
 #endif /* !COMMON_H */

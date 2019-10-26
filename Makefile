@@ -3,7 +3,8 @@
 CC = gcc
 
 # define any compile-time flags
-CFLAGS = -Wall -g
+#-Wextra -Werror
+CFLAGS = -Wall -g 
 
 # define any directories containing header files other than /usr/include
 INCLUDES = -I./include

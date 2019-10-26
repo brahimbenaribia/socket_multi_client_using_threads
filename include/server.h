@@ -32,7 +32,7 @@ void push_client(client_t * client);
 
 void pop(client_t * client);
 
-void pop_client(unsigned int client_id);
+void pop_client(int socket_fd);
 
 client_t * get_client(int socket_fd);
 
